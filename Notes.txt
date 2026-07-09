@@ -1,0 +1,12 @@
+JavaScript fundamentals:
+functions, loops , objects,classes
+
+HTTP  basics :
+Methods, status code 
+
+How JSON APIs work:
+
+Basic understing of Node.JSON
+
+Npm 
+
