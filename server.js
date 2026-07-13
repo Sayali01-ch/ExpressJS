@@ -20,8 +20,14 @@ let posts=[
 {id:3, title:'Post Three'}
 ];
 
+//get limited outputs
 app.get('/api/posts',(req, res)=>{
-res.json(posts);
+    const limit=parseInt(req.query.limit);
+    if(!isNaN(limit)&& limit>0){
+        res.json(posts.slice(0,limit));
+    }else{
+        res.json(posts);
+    }
 });
 
 app.get('/api/posts/:id',(req, res)=>{
