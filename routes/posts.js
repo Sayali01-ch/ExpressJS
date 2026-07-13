@@ -15,7 +15,7 @@ let posts=[
 
 
 //get limited outputs
-app.get('/api/posts',(req, res)=>{
+app.get('/',(req, res)=>{
     
     const limit=parseInt(req.query.limit);
     if(!isNaN(limit)&& limit>0){
@@ -49,8 +49,15 @@ if(!post){
 
 //Create new post
 router.post('/',(req, res) => {
-    console.log(req.body);
-
+    const newPost={
+        id:posts.length+1,
+        title:req.body.title,
+    };
+    if(!newPost.title){
+        return res.sendStatus(400).json({msg:'Plaease add the title'});
+    }
+    //console.log(req.body);
+posts.push(newPost);
     res.status(201).json(posts);
 });
 

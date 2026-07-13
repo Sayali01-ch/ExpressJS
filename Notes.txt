@@ -10,3 +10,12 @@ Basic understing of Node.JSON
 
 Npm 
 
+http://localhost:8000/api/posts/1
+http://localhost:8000/api/posts?limit=10
+
+//main status codes 
+200-->success
+300-->redirects
+400-->client error
+500-->server errors
+
