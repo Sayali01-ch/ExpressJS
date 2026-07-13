@@ -19,3 +19,5 @@ http://localhost:8000/api/posts?limit=10
 400-->client error
 500-->server errors
 
+middleware--> is something which has access to request nad response object 
+- use for anything like  authentication , login 
