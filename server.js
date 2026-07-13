@@ -2,6 +2,10 @@ const express= require('express');
 const path =require('path');
 const port = process.env.PORT || 8000;
 const app=express();
+app.use((req, res, next) => {
+  console.log('Incoming:', req.method, req.url);
+  next();
+});
 
 //setup static folder 
 //app.use(express.static(path.join(__dirname, 'public'))); 
@@ -22,18 +26,25 @@ let posts=[
 
 //get limited outputs
 app.get('/api/posts',(req, res)=>{
+    
     const limit=parseInt(req.query.limit);
     if(!isNaN(limit)&& limit>0){
-        res.json(posts.slice(0,limit));
+        res.status(200).json(posts.slice(0,limit));
     }else{
-        res.json(posts);
+        res.status(200).json(posts);
     }
 });
 
+
+//Get single posts
 app.get('/api/posts/:id',(req, res)=>{
-const id= parseInt(req.params.id)
-console.log(req.params.id);
-res.json(posts.filter((posts) => posts.id ===id));
+const id= parseInt(req.params.id);
+const post=posts.find((post) => post.id ===id);
+if(!post){
+    res.status(404).json({msg: `Apost with the id of ${id} was not found`});
+}else{
+    res.status(200).json(post);
+}
 });
 
 
