@@ -1,21 +1,22 @@
-import colors from 'colors';
+import chalk from 'chalk';
 
 const logger = (req, res, next) => {
-  const methodColors={
-   GET:'green',
-   POST:'blue',
-   PUT :' yellow',
-   DELETE: 'red'
-  }
-const color =methodColors[req.method] || white;
+  const url = `${req.method} ${req.protocol}://${req.get('host')}${req.originalUrl}`;
 
-   console.log( 
-   `${req.method} ${req.protocol}://${req.get('host')}${req.originalUrl}`[
-   color
-  ]
-  );
-  // colors package adds ANSI color methods (colors.red, colors.blue, etc.)
-  //console.log(colors.red(url));
+  const methodColors = {
+    GET: 'green',
+    POST: 'blue',
+    PUT: 'yellow',
+    DELETE: 'red',
+  };
+
+  const color = methodColors[req.method];
+
+  if (color && chalk[color]) {
+    console.log(chalk[color](url));
+  } else {
+    console.log(url);
+  }
 
   next();
 };
