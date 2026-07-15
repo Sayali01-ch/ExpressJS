@@ -12,6 +12,9 @@ Npm
 
 http://localhost:8000/api/posts/1
 http://localhost:8000/api/posts?limit=10
+localhost:8000
+localhost:8000/about.html
+
 
 //main status codes 
 200-->success
@@ -19,5 +22,617 @@ http://localhost:8000/api/posts?limit=10
 400-->client error
 500-->server errors
 
-middleware--> is something which has access to request nad response object 
+middleware--> is something which has access to request and response object 
 - use for anything like  authentication , login 
+
+================================================================================
+EXPRESS.JS CRASH COURSE - DETAILED NOTES
+Reference: https://www.youtube.com/watch?v=CnH3kAXSrmU
+================================================================================
+
+
+--------------------------------------------------------------------------------
+1. EXPRESS SETUP (6:45)
+--------------------------------------------------------------------------------
+- Express is a fast, minimalist, unopinionated web framework for Node.js.
+- It simplifies building servers and APIs compared to using raw Node's `http` module.
+- Initialize a project and install Express:
+
+    npm init -y
+    npm install express
+
+- This creates package.json and adds "express" to dependencies.
+- Entry file is commonly named server.js or index.js.
+
+
+--------------------------------------------------------------------------------
+2. BASIC SERVER (9:00)
+--------------------------------------------------------------------------------
+- Import Express, create an app instance, define a route, and start listening.
+
+    import express from 'express';
+
+    const app = express();
+
+    app.get('/', (req, res) => {
+      res.send('Hello World');
+    });
+
+    const PORT = 3000;
+    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+- `app.get(path, handler)` registers a route for GET requests.
+- `(req, res)` are the request and response objects passed to every handler.
+- `app.listen(port, callback)` starts the server and binds it to a port.
+
+
+--------------------------------------------------------------------------------
+3. --watch FLAG & NPM SCRIPTS (13:10)
+--------------------------------------------------------------------------------
+- Node's built-in `--watch` flag auto-restarts the server on file changes
+  (no need for external tools like nodemon).
+- Add scripts to package.json:
+
+    "scripts": {
+      "start": "node server",
+      "dev": "node --watch --env-file=.env server"
+    }
+
+- Run with:
+    npm start        -> plain run, no auto-restart
+    npm run dev       -> auto-restart on save + loads .env automatically
+
+- `--env-file=.env` (Node's native flag) loads environment variables without
+  needing the `dotenv` package.
+
+
+--------------------------------------------------------------------------------
+4. res.sendFile() METHOD (15:25)
+--------------------------------------------------------------------------------
+- Used to send a specific file (like an HTML page) as the response.
+
+    import path from 'path';
+
+    app.get('/', (req, res) => {
+      res.sendFile(path.join(process.cwd(), 'public', 'index.html'));
+    });
+
+- Requires an absolute path, so it's usually combined with `path.join()`.
+- Good for serving a single HTML file without a templating engine.
+
+
+--------------------------------------------------------------------------------
+5. STATIC WEB SERVER (18:00)
+--------------------------------------------------------------------------------
+- Express has built-in middleware to serve static assets (CSS, JS, images, HTML)
+  directly from a folder.
+
+    app.use(express.static('public'));
+
+- Any file inside /public is now served automatically:
+    public/style.css   ->  http://localhost:3000/style.css
+    public/index.html  ->  http://localhost:3000/index.html
+
+- No need to write a route for every static file.
+
+
+--------------------------------------------------------------------------------
+6. WORKING WITH JSON (19:48)
+--------------------------------------------------------------------------------
+- `res.json()` sends a JSON response and automatically sets the
+  Content-Type header to application/json.
+
+    app.get('/api/users', (req, res) => {
+      res.json([{ id: 1, name: 'John' }, { id: 2, name: 'Sarah' }]);
+    });
+
+- Useful for building REST APIs consumed by a frontend or another service.
+
+
+--------------------------------------------------------------------------------
+7. POSTMAN UTILITY (22:35)
+--------------------------------------------------------------------------------
+- Postman is a GUI tool for testing API endpoints without a frontend.
+- Lets you send GET, POST, PUT, DELETE requests, set headers, and send a
+  request body (JSON, form-data, etc.).
+- Very useful while building an API, since you can test routes immediately
+  as you write them, before any frontend exists.
+- Alternatives: Insomnia, Thunder Client (VS Code extension), or curl.
+
+
+--------------------------------------------------------------------------------
+8. ENVIRONMENT VARIABLES (.env) (23:45)
+--------------------------------------------------------------------------------
+- Used to store configuration/secrets outside of the codebase
+  (ports, API keys, database URLs, etc.).
+- Create a `.env` file in the project root:
+
+    PORT=5000
+    NODE_ENV=development
+
+- Add `.env` to `.gitignore` so secrets are never committed.
+- Access variables via `process.env`:
+
+    const PORT = process.env.PORT || 3000;
+
+- Loaded automatically with Node's `--env-file=.env` flag (no extra package
+  needed), or via the `dotenv` package with `import 'dotenv/config'`.
+
+
+--------------------------------------------------------------------------------
+9. REQUEST PARAMS (req.params) (26:30)
+--------------------------------------------------------------------------------
+- Route/URL parameters are defined with a colon `:` in the path and captured
+  in `req.params`.
+
+    app.get('/api/users/:id', (req, res) => {
+      const { id } = req.params;
+      res.send(`User ID is ${id}`);
+    });
+
+- Visiting /api/users/5 -> req.params.id === '5' (always a string).
+- Multiple params are allowed: '/api/users/:userId/posts/:postId'
+
+
+--------------------------------------------------------------------------------
+10. QUERY STRINGS (req.query) (29:35)
+--------------------------------------------------------------------------------
+- Query strings appear after a `?` in the URL and are accessed via req.query.
+
+    // GET /api/users?name=John&age=25
+    app.get('/api/users', (req, res) => {
+      const { name, age } = req.query;
+      res.send(`Name: ${name}, Age: ${age}`);
+    });
+
+- Commonly used for filtering, sorting, searching, or pagination
+  (e.g. ?sort=asc&page=2).
+
+
+--------------------------------------------------------------------------------
+11. SETTING STATUS CODES (33:19)
+--------------------------------------------------------------------------------
+- HTTP status codes communicate the result of a request.
+- Use `.status()` before sending a response:
+
+    app.get('/api/users/:id', (req, res) => {
+      const user = users.find(u => u.id === parseInt(req.params.id));
+      if (!user) {
+        return res.status(404).json({ msg: 'User not found' });
+      }
+      res.status(200).json(user);
+    });
+
+- Common codes:
+    200 OK              - success
+    201 Created         - resource created successfully
+    204 No Content       - success, nothing to return
+    400 Bad Request      - invalid input from client
+    401 Unauthorized     - missing/invalid auth
+    403 Forbidden        - authenticated but not allowed
+    404 Not Found        - resource doesn't exist
+    500 Internal Server Error - server-side failure
+
+
+--------------------------------------------------------------------------------
+12. MULTIPLE RESPONSES (36:40)
+--------------------------------------------------------------------------------
+- A single handler can branch and send different responses based on
+  conditions (e.g. found vs. not found).
+- IMPORTANT: only one response can be sent per request. Once res.send()/
+  res.json()/res.sendFile() is called, the request-response cycle ends.
+- Use `return` before a response inside a conditional to prevent the
+  "Headers already sent" error from firing a second response by mistake.
+
+    app.get('/api/users/:id', (req, res) => {
+      const user = users.find(u => u.id === parseInt(req.params.id));
+      if (!user) {
+        return res.status(404).json({ msg: 'Not found' }); // stops here
+      }
+      res.json(user); // only runs if user was found
+    });
+
+
+--------------------------------------------------------------------------------
+13. ROUTE FILES (37:35)
+--------------------------------------------------------------------------------
+- As an app grows, all routes shouldn't live in one server.js file.
+- Use `express.Router()` to split routes into separate files by resource.
+
+    // routes/users.js
+    import express from 'express';
+    const router = express.Router();
+
+    router.get('/', (req, res) => res.send('Get all users'));
+    router.get('/:id', (req, res) => res.send('Get single user'));
+
+    export default router;
+
+    // server.js
+    import userRoutes from './routes/users.js';
+    app.use('/api/users', userRoutes);
+
+- Keeps the codebase organized and mirrors typical REST API structure
+  (one route file per resource: users, products, orders, etc.).
+
+
+--------------------------------------------------------------------------------
+14. USING ES MODULES (41:40)
+--------------------------------------------------------------------------------
+- By default, Node uses CommonJS (`require`/`module.exports`).
+- To use modern `import`/`export` syntax, set in package.json:
+
+    "type": "module"
+
+- Then imports/exports look like:
+
+    import express from 'express';
+    export default router;
+    export const someFunction = () => {};
+
+- Note: with ES Modules, `__dirname` and `__filename` are NOT available by
+  default (see topic 24 below for the workaround).
+
+
+--------------------------------------------------------------------------------
+15. REQUEST BODY DATA (43:47)
+--------------------------------------------------------------------------------
+- To read data sent in a POST/PUT request body (e.g. JSON from a form or API
+  client), you need Express's built-in JSON body parser middleware:
+
+    app.use(express.json());
+
+- Without this middleware, req.body will be undefined.
+- For form submissions (application/x-www-form-urlencoded), also add:
+
+    app.use(express.urlencoded({ extended: false }));
+
+- Once enabled, request body data is available as:
+
+    app.post('/api/users', (req, res) => {
+      console.log(req.body); // { name: 'John', age: 25 }
+    });
+
+
+--------------------------------------------------------------------------------
+16. POST REQUEST (47:53)
+--------------------------------------------------------------------------------
+- Used to CREATE a new resource.
+
+    router.post('/', (req, res) => {
+      const newUser = {
+        id: users.length + 1,
+        name: req.body.name,
+        age: req.body.age,
+      };
+      users.push(newUser);
+      res.status(201).json(newUser);
+    });
+
+- Convention: return status 201 (Created) with the newly created resource.
+- Requires express.json() middleware to read req.body.
+
+
+--------------------------------------------------------------------------------
+17. PUT REQUEST (50:23)
+--------------------------------------------------------------------------------
+- Used to UPDATE an existing resource (usually a full replace, though many
+  apps use it loosely like PATCH for partial updates).
+
+    router.put('/:id', (req, res) => {
+      const user = users.find(u => u.id === parseInt(req.params.id));
+      if (!user) return res.status(404).json({ msg: 'Not found' });
+
+      user.name = req.body.name;
+      user.age = req.body.age;
+      res.status(200).json(user);
+    });
+
+- Combines req.params (which resource) with req.body (new data).
+
+
+--------------------------------------------------------------------------------
+18. DELETE REQUEST (53:23)
+--------------------------------------------------------------------------------
+- Used to DELETE/remove a resource.
+
+    router.delete('/:id', (req, res) => {
+      const user = users.find(u => u.id === parseInt(req.params.id));
+      if (!user) return res.status(404).json({ msg: 'Not found' });
+
+      users = users.filter(u => u.id !== parseInt(req.params.id));
+      res.status(200).json({ msg: 'User deleted' });
+    });
+
+- Together, GET/POST/PUT/DELETE form full CRUD (Create, Read, Update, Delete).
+
+
+--------------------------------------------------------------------------------
+19. MIDDLEWARE (55:44)
+--------------------------------------------------------------------------------
+- Middleware are functions that run BETWEEN the request and the final route
+  handler. They have access to (req, res, next).
+- Used for logging, authentication, parsing, validation, error handling, etc.
+
+    const logger = (req, res, next) => {
+      console.log(`${req.method} ${req.url}`);
+      next(); // must call next() to pass control to the next middleware/route
+    };
+
+    app.use(logger); // applies to ALL routes
+
+- Middleware can also be applied to a single route:
+
+    app.get('/api/users', logger, (req, res) => { ... });
+
+- If `next()` is never called, the request will hang (no response sent).
+
+
+--------------------------------------------------------------------------------
+20. CUSTOM ERROR HANDLER (1:00:24)
+--------------------------------------------------------------------------------
+- Express error-handling middleware has a special signature with FOUR
+  parameters: (err, req, res, next).
+- Must be defined AFTER all other routes/middleware.
+
+    const errorHandler = (err, req, res, next) => {
+      const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+      res.status(statusCode);
+      res.json({
+        message: err.message,
+        stack: process.env.NODE_ENV === 'production' ? null : err.stack,
+      });
+    };
+
+    app.use(errorHandler);
+
+- Any error passed via `next(error)` in a route will be caught here instead
+  of crashing the server.
+
+
+--------------------------------------------------------------------------------
+21. CATCH-ALL ERROR MIDDLEWARE (1:08:30)
+--------------------------------------------------------------------------------
+- Handles requests to routes that don't exist (404 catch-all), placed AFTER
+  all defined routes but BEFORE the error handler.
+
+    app.use((req, res, next) => {
+      const error = new Error(`Not Found - ${req.originalUrl}`);
+      res.status(404);
+      next(error); // forwards to the custom error handler above
+    });
+
+- This ensures unmatched routes return a consistent JSON error response
+  instead of Express's default HTML error page.
+
+
+--------------------------------------------------------------------------------
+22. COLORS PACKAGE (1:10:47)
+--------------------------------------------------------------------------------
+- The `colors` npm package adds color styling to console output, useful for
+  making server logs easier to read (e.g. green for success, red for errors).
+
+    npm install colors
+
+    import 'colors';
+
+    console.log('Server running'.green);
+    console.log('Error occurred'.red);
+    console.log('Warning'.yellow.bold);
+
+- Purely a developer-experience/logging enhancement, no effect on app logic.
+
+
+--------------------------------------------------------------------------------
+23. USING CONTROLLERS (1:14:17)
+--------------------------------------------------------------------------------
+- Controllers separate the actual logic of a route handler from the route
+  definition itself, keeping route files clean (MVC pattern).
+
+    // controllers/userController.js
+    export const getUsers = (req, res) => {
+      res.json(users);
+    };
+
+    export const getUser = (req, res) => {
+      const user = users.find(u => u.id === parseInt(req.params.id));
+      if (!user) return res.status(404).json({ msg: 'Not found' });
+      res.json(user);
+    };
+
+    // routes/users.js
+    import express from 'express';
+    import { getUsers, getUser } from '../controllers/userController.js';
+
+    const router = express.Router();
+    router.get('/', getUsers);
+    router.get('/:id', getUser);
+
+    export default router;
+
+- Result: routes/ only defines "what path maps to what function", while
+  controllers/ contains the actual implementation.
+
+
+--------------------------------------------------------------------------------
+24. __dirname WORKAROUND (1:20:45)
+--------------------------------------------------------------------------------
+- In CommonJS, `__dirname` and `__filename` are available globally.
+- In ES Modules, they are NOT defined by default, so you must recreate them:
+
+    import path from 'path';
+    import { fileURLToPath } from 'url';
+
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+
+- Now `__dirname` can be used as before, e.g. to build absolute paths for
+  static files or views:
+
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+
+
+--------------------------------------------------------------------------------
+25. MAKING REQUESTS FROM FRONTEND (1:24:29)
+--------------------------------------------------------------------------------
+- The browser's built-in `fetch()` API is used to call the Express API from
+  client-side JavaScript.
+
+    fetch('/api/users')
+      .then(res => res.json())
+      .then(data => console.log(data))
+      .catch(err => console.error(err));
+
+- For requests with a body (POST/PUT), specify method, headers, and a
+  JSON-stringified body:
+
+    fetch('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'John', age: 25 }),
+    })
+      .then(res => res.json())
+      .then(data => console.log(data));
+
+- This connects a static HTML/JS frontend (served via express.static) to the
+  Express backend API.
+
+
+--------------------------------------------------------------------------------
+26. SUBMIT FORM TO API (1:30:03)
+--------------------------------------------------------------------------------
+- Capture an HTML form's submit event, prevent the default page reload, and
+  send the form data to the API using fetch().
+
+    const form = document.querySelector('#userForm');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault(); // stop normal form submission/page reload
+
+      const formData = new FormData(form);
+      const name = formData.get('name');
+      const age = formData.get('age');
+
+      const res = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, age }),
+      });
+
+      const data = await res.json();
+      console.log(data);
+    });
+
+- Combines frontend form handling with backend POST route + express.json()
+  middleware to fully process user-submitted data.
+
+
+--------------------------------------------------------------------------------
+27. EJS TEMPLATE ENGINE SETUP (1:36:00)
+--------------------------------------------------------------------------------
+- EJS (Embedded JavaScript) is a templating engine that lets you generate
+  HTML dynamically on the server, embedding JS logic directly in the markup.
+
+    npm install ejs
+
+    app.set('view engine', 'ejs');
+    // By default Express looks for templates in a "views" folder
+
+- A view file (views/index.ejs) looks like regular HTML but can include
+  JS using <% %> and <%= %> tags.
+- Render a view from a route:
+
+    app.get('/', (req, res) => {
+      res.render('index', { title: 'Home Page' });
+    });
+
+- `res.render(viewName, data)` compiles the .ejs file and sends back HTML,
+  replacing `res.sendFile()` for dynamic pages.
+
+
+--------------------------------------------------------------------------------
+28. PASS DATA TO VIEWS (1:41:15)
+--------------------------------------------------------------------------------
+- The second argument to `res.render()` is an object of data made available
+  inside the EJS template.
+
+    app.get('/', (req, res) => {
+      res.render('index', { title: 'Home', message: 'Welcome!' });
+    });
+
+    <!-- views/index.ejs -->
+    <h1><%= title %></h1>
+    <p><%= message %></p>
+
+- `<%= %>` outputs escaped values (safe, prevents HTML injection).
+- `<%- %>` outputs raw/unescaped HTML (use carefully, only for trusted data).
+
+
+--------------------------------------------------------------------------------
+29. PASS AND LOOP OVER ARRAYS (1:42:50)
+--------------------------------------------------------------------------------
+- Arrays/objects passed into res.render() can be looped over directly inside
+  the EJS template using plain JavaScript inside <% %> tags.
+
+    app.get('/users', (req, res) => {
+      res.render('users', { users });
+    });
+
+    <!-- views/users.ejs -->
+    <ul>
+      <% users.forEach(user => { %>
+        <li><%= user.name %> (<%= user.age %>)</li>
+      <% }) %>
+    </ul>
+
+- `<% %>` runs JS logic without outputting anything (used for loops, ifs, etc.).
+- `<%= %>` is used inside the loop to actually print each value.
+
+
+--------------------------------------------------------------------------------
+30. TEMPLATE PARTIALS (1:44:20)
+--------------------------------------------------------------------------------
+- Partials are reusable chunks of EJS markup (e.g. header, footer, navbar)
+  that can be included across multiple views to avoid duplication.
+
+    views/
+    ├── partials/
+    │   ├── header.ejs
+    │   └── footer.ejs
+    ├── index.ejs
+    └── users.ejs
+
+- Include a partial inside another view:
+
+    <%- include('partials/header') %>
+
+    <h1>Page Content</h1>
+
+    <%- include('partials/footer') %>
+
+- Use `<%- %>` (not `<%= %>`) for includes, since the partial's HTML should
+  render as raw markup, not be escaped.
+
+
+================================================================================
+QUICK REFERENCE: FULL CRUD ROUTE PATTERN
+================================================================================
+    GET     /api/resource        -> get all
+    GET     /api/resource/:id    -> get one
+    POST    /api/resource        -> create one
+    PUT     /api/resource/:id    -> update one
+    DELETE  /api/resource/:id    -> delete one
+
+================================================================================
+QUICK REFERENCE: TYPICAL MIDDLEWARE STACK ORDER
+================================================================================
+    1. express.json() / express.urlencoded()   -> parse request bodies
+    2. express.static('public')                -> serve static files
+    3. Custom logger/auth middleware
+    4. Route files (app.use('/api/x', router))
+    5. Catch-all 404 handler
+    6. Custom error-handling middleware (err, req, res, next)
+
+================================================================================
+END OF NOTES
+================================================================================
